@@ -203,5 +203,173 @@ void Mirror(TreeNode *pRoot) {
 	Mirror(pRoot->right);
 }
 
+//最长公共子序列  不连续
+/*
+关系式：
+			|0								i == 0 || j == 0
+LCS[i][j] = |LCS[i-1][j-1]+1				x[i-1] = y[j-1]
+			|max(LCS[i-1][j],LCS[i][j-1])	otherwise；
+			*/
+//从上到下 递归 O(mn)  O(mn)
+int LCSLength(string x,string y,int m,int n,auto &lookup){
+	if(m == 0 || n == 0)
+		return 0;
+	string key = to_string(m) + "|" + to_string(n);
+	if(lookup.find(key) == lookup.end()){
+		if(x[m-1] == y[n-1])
+			lookup[key] = LCSLength(x,y,m-1,n-1,lookup) + 1;
+		else
+			lookup[key] = max(LCSLength(x,y,m-1,n,lookup),
+								LCSLength(x,y,m,n-1,lookup));
+	}
+	return lookup[key];
+}
+//从下到上 迭代
+int LCSLength(string x,string y){
+	int m = str.size(),n=y.size();
+	int lookup[m+1][n+1];
+	int i = 0,j=0;
+	for(;i<m+1;++i)	lookup[i][n+1] = 0;
+	for(;j<n+1;++j)	lookup[m+1][j] = 0;
+
+	for(i = 1;i<m+1;++i){
+		for(j = 1;j<n+1;++j){
+			if(x[i-1] == y[j-1])
+				lookup[i][j] = lookup[i-1][j-1] + 1;
+			else
+				lookup[i][j] = max(lookup[i][j-1],lookup[i-1][j]);
+		}
+	}
+	return lookup[m][n];
+}
+
+//最长公共子串  连续
+/*
+关系式：
+LCS[i][j] = |LCS[i-1][j-1]+1				x[i-1] = y[j-1]
+			|0								otherwise；
+			*/
+string LCSLength(string x,string y,int m,int n){
+	int maxLength = 0;
+	int endIndex = m;
+	int lookup[m+1][n+1];
+	memset(lookup,0,sizeof(lookup));
+	for(int i = 1;i<m+1;++i){
+		for(int j = 0;j<n+1;++j){
+			if(x[i-1] == y[j-1]){
+				lookup[i][j] = lookup[i-1][j-1]+1;
+				if(lookup[i][j] > maxLength){
+					maxLength = lookup[i][j];
+					endIndex = i;
+				}
+			}
+		}
+	}
+	return x.substr(endIndex-maxLength,maxLength);
+}
+
+/*最长回文子序列
+关系式：
+			|1								i=j
+LCS[i..j] = |L(i+1,j-1)+2					x[i] = x[j]
+			|max(LCS[i-1..j],LCS[i..j-1])	x[i] != x[j]
+			*/
+int longestPalindrome(string x,int i,int j){
+	if(i > j)	return 0;
+	if(i == j)	return 1;
+	if(x[i] == x[j])
+		return 	longestPalindrome(x,i+1,j-1)+2;
+	
+	return max(longestPalindrome(x,i+1,j),
+				longestPalindrome(x,i,j-1));
+}
+
+//
+
+//动态规划
+//背包问题  
+/*
+有 n 个重量个价值分别为 w_i, v_i 的物品。
+从这些物品中选出总重量不超过 W 的物品，使其总价值最大。
+
+示例
+1                // 用例数
+5 10             // 物品数 背包容量 N <= 1000 , V <= 1000
+1 2 3 4 5
+5 4 3 2 1
+
+14
+*/
+//定义：dp[i][j] := 从前 i 个物品中选取总重量不超过 j 的物品时总价值的最大值
+//i 从 1 开始计，包括第 i 个物品
+//初始化 dp[0][j] = 0;
+/*
+状态转移：
+dp[i][j] =  |dp[i-1][j]                                j<w[i]
+			|max(dp[i-1][j],dp[i-1][j-w[i]] + v[i])    j >= w[i]
+*/
+//二维DP
+ int packetSolve(int N,int V,vector<int>& value,vector<int>& weight){
+	 vector<vector<int>> dp(N+1,vector<int>(N+1,0));
+
+	 for(int i = 1;i<=N;++i){
+		 for(int j = 0;j<=V;++j){
+			if(j < weight[i])
+			 	dp[i][j] = dp[i-1][j];
+			else{
+				dp[i][j] = max(dp[i-1][j],dp[i-1][j-weight[i]] + value[i]);
+			}
+		 }
+	 }
+	 return dp[N][V];
+ }
 
 
+//字符串
+
+//字符串拷贝
+char* strCopy(char *strDes,const char *strSource){
+	if(strDes == strSource)
+		return strDes;
+	assert((strDes != nullptr) && (strSource != nullptr));
+	char *pDes = strDes;
+	while((*strDes++ = *strSource++) != '\0');
+	return pDes;
+}
+//字符串拷贝
+char *strnCpy(char *strDes,const char *strSource,int count){
+	assert（strDes!=nullptr && strSource!=nullptr）;
+	char *pDes = strDes;
+	while(count-- && *strSource != '\0')
+		*strDes++ = * strSource;
+	*strDes = '\0';//最后加上结束标志
+	return pDes;
+}
+
+//首次出现某字符
+int findChar(const char* str,char c){
+	assert(str != nullptr);
+	int index = 0;
+	for(;*str!=c;++str){
+		if(*str == '\0')
+			return -1;
+		++index;
+	}
+	return index;
+}
+
+//链表
+//倒数第K个节点
+ListNode* findLastKthNode(ListNode *head,int k){
+	assert(k >= 0);
+	ListNode *slow = head,*fast = head;
+	for(;k>0 && fast!=nullptr;--k)
+		fast = fast->next;
+	if(k > 0)
+		return nullptr;
+	while(fast){
+		slow = slow->next;
+		fast = fast->next;
+	}
+	return slow;
+}
